@@ -289,7 +289,7 @@ app.listen(PORT, async () => {
   setInterval(async () => {
     try {
       console.log("Calling /self endpoint...");
-      await axios.get(`http://localhost:${PORT}/self`);
+      await axios.get(`${process.env.ORIGIN_URL}/self`);
     } catch (error) {
       console.error("Self call failed:", error.message);
     }
