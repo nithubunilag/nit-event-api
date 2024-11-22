@@ -78,13 +78,13 @@ app.post("/participant", async (req, res) => {
     });
 
     const qrCodeDataUrl = await QRCode.toDataURL(ticketId);
+    participant?.ticketId?.to
 
     await sendEmail({
       to: validatedData.email,
       subject: "Ticket Confirmation",
       body: sendTicketEmail({
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
+        ...participant,
         qrCodeDataUrl,
       }),
     });

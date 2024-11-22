@@ -1,4 +1,4 @@
-const sendTicketMail = (data) => `
+const sendTicketMails = (data) => `
 <!DOCTYPE html>
 
 <html lang="en-US">
@@ -268,6 +268,76 @@ const sendTicketMail = (data) => `
 
 </html>
 
+`;
+
+
+const sendTicketMail = (data) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to ICAIR - Your Ticket Information</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0;">
+    <table cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="padding: 20px; text-align: center; background-color: #62CF3A;">
+                <h1 style="color: #ffffff; margin: 0;">Welcome to ICAIR</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px;">
+                <p style="text-transform:capitalize;">Dear ${data?.firstName} ${data?.lastName},</p>
+                <p>Thank you for registering for the National Information Technology Development Agency (NITDA) International Conference on Artificial Intelligence and Robotics (ICAIR). We're excited to have you join us for this groundbreaking event!</p>
+                <h2 style="color: #62CF3A;">Event Details</h2>
+                <p><strong>Date:</strong> {eventDate}</p>
+                <p><strong>Venue:</strong> {eventVenue}</p>
+                <p><strong>Time:</strong> {eventTime}</p>
+                <h2 style="color: #62CF3A;">Your Ticket Information</h2>
+                <table cellpadding="10" cellspacing="0" width="100%" style="border: 1px solid #dddddd; border-collapse: collapse;">
+                    <tr>
+                        <td style="border: 1px solid #dddddd;"><strong>Ticket ID:</strong></td>
+                        <td style="border: 1px solid #dddddd; text-transform:capitalize;">${data?.ticketId}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #dddddd;"><strong>Attending As:</strong></td>
+                        <td style="border: 1px solid #dddddd; text-transform:capitalize;">${data?.attendedAs}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #dddddd;"><strong>Registration Type:</strong></td>
+                        <td style="border: 1px solid #dddddd; text-transform:capitalize;">${data?.registeredAs}</td>
+                    </tr>
+                </table>
+                <div style="text-align: center; margin-top: 20px;">
+                    <h3 style="color: #62CF3A;">Your Ticket QR Code</h3>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${data?.ticketId}" alt="Ticket QR Code" style="max-width: 150px; height: auto;">
+                    <p style="font-size: 14px; color: #666666;">Scan this QR code at the event for quick check-in</p>
+                </div>
+                <p style="margin-top: 20px;">Please keep this information handy for check-in at the event. You can either print this email, show it on your mobile device, or use the QR code for a contactless check-in experience.</p>
+                <h2 style="color: #62CF3A;">About ICAIR</h2>
+                <p>ICAIR is a premier conference that brings together experts, researchers, and enthusiasts in the fields of Artificial Intelligence and Robotics. This year's theme is "{conferenceTheme}", and we have an exciting lineup of speakers and workshops planned.</p>
+                <h2 style="color: #62CF3A;">What to Expect</h2>
+                <ul>
+                    <li>Keynote speeches from industry leaders</li>
+                    <li>Interactive workshops and demonstrations</li>
+                    <li>Networking opportunities with peers and experts</li>
+                    <li>Showcase of cutting-edge AI and robotics technologies</li>
+                </ul>
+                <p>If you have any questions or need additional information, please don't hesitate to contact us at nitda@nithub.com.</p>
+                <p>We look forward to seeing you at ICAIR!</p>
+                <p>Best regards,<br>The ICAIR Team</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px; text-align: center; background-color: #f0f0f0;">
+                <p style="margin: 0; font-size: 12px; color: #666666;">This email was sent to ${data?.email}. If you believe this is a mistake, please contact us.</p>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #666666;">&copy; 2024 NITDA ICAIR. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
 `;
 
 
