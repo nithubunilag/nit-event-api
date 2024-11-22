@@ -165,7 +165,18 @@ app.get("/participant", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search;
 
-    const query = search ? { $text: { $search: search } } : {};
+     const query = search
+       ? {
+           $or: Object.keys(Participant.schema.paths)
+             .filter(
+               (field) => Participant.schema.paths[field].instance === "String"
+             ) // Only include string fields
+             .map((field) => ({
+               [field]: { $regex: search, $options: "i" },
+             })),
+         }
+       : {};
+
 
     const [participants, total] = await Promise.all([
       Participant.find(query)
@@ -187,6 +198,7 @@ app.get("/participant", async (req, res) => {
       },
     });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
