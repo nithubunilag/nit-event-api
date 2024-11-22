@@ -84,7 +84,12 @@ app.post("/participant", async (req, res) => {
       to: validatedData.email,
       subject: "Ticket Confirmation",
       body: sendTicketEmail({
-        ...participant,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        ticketId:participant.ticketId,
+        attendedAs:participant.attendedAs,
+        registeredAs:participant.registeredAs,
+        email: participant.email,
         qrCodeDataUrl,
       }),
     });
@@ -244,9 +249,9 @@ app.post("/participant/check-in", async (req, res) => {
     const currentDate = new Date();
 
     const dayMapping = {
-      [new Date(currentDate.getFullYear(), 10, 22).toDateString()]: "day1",
-      [new Date(currentDate.getFullYear(), 11, 1).toDateString()]: "day3",
-      [new Date(currentDate.getFullYear(), 11, 2).toDateString()]: "day2",
+      [new Date(currentDate.getFullYear(), 10, 22).toDateString()]: "testDay",
+      [new Date(currentDate.getFullYear(), 10, 26).toDateString()]: "day1",
+      [new Date(currentDate.getFullYear(), 10, 28).toDateString()]: "day2",
     };
 
     const day = dayMapping[currentDate.toDateString()];

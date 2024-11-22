@@ -282,19 +282,19 @@ const sendTicketMail = (data) => `
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0;">
     <table cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
         <tr>
-            <td style="padding: 20px; text-align: center; background-color: #62CF3A;">
+            <td style="padding: 20px; text-align: center; background-color: #190577;">
                 <h1 style="color: #ffffff; margin: 0;">Welcome to ICAIR</h1>
             </td>
         </tr>
         <tr>
             <td style="padding: 20px;">
                 <p style="text-transform:capitalize;">Dear ${data?.firstName} ${data?.lastName},</p>
-                <p>Thank you for registering for the National Information Technology Development Agency (NITDA) International Conference on Artificial Intelligence and Robotics (ICAIR). We're excited to have you join us for this groundbreaking event!</p>
-                <h2 style="color: #62CF3A;">Event Details</h2>
-                <p><strong>Date:</strong> {eventDate}</p>
-                <p><strong>Venue:</strong> {eventVenue}</p>
-                <p><strong>Time:</strong> {eventTime}</p>
-                <h2 style="color: #62CF3A;">Your Ticket Information</h2>
+                <p>Thank you for registering for the 4th International Conference on AI and Robotics (ICAIR 2024). We're excited to have you join us for this groundbreaking event!</p>
+                <h2 style="color: #190577;">Event Details</h2>
+                <p><strong>Date:</strong> 26th - 28th, November, 2024</p>
+                <p><strong>Venue:</strong> Glass House, Faculty of education UNILAG</p>
+                <p><strong>Time:</strong> 9:00AM</p>
+                <h2 style="color: #190577;">Your Ticket Information</h2>
                 <table cellpadding="10" cellspacing="0" width="100%" style="border: 1px solid #dddddd; border-collapse: collapse;">
                     <tr>
                         <td style="border: 1px solid #dddddd;"><strong>Ticket ID:</strong></td>
@@ -310,21 +310,21 @@ const sendTicketMail = (data) => `
                     </tr>
                 </table>
                 <div style="text-align: center; margin-top: 20px;">
-                    <h3 style="color: #62CF3A;">Your Ticket QR Code</h3>
+                    <h3 style="color: #190577;">Your Ticket QR Code</h3>
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${data?.ticketId}" alt="Ticket QR Code" style="max-width: 150px; height: auto;">
                     <p style="font-size: 14px; color: #666666;">Scan this QR code at the event for quick check-in</p>
                 </div>
-                <p style="margin-top: 20px;">Please keep this information handy for check-in at the event. You can either print this email, show it on your mobile device, or use the QR code for a contactless check-in experience.</p>
-                <h2 style="color: #62CF3A;">About ICAIR</h2>
-                <p>ICAIR is a premier conference that brings together experts, researchers, and enthusiasts in the fields of Artificial Intelligence and Robotics. This year's theme is "{conferenceTheme}", and we have an exciting lineup of speakers and workshops planned.</p>
-                <h2 style="color: #62CF3A;">What to Expect</h2>
+                <p style="margin-top: 20px;">Please keep this information handy for check-in at the event. You can either print this email, show it on your mobile device, or use the QR code for a smooth check-in experience.</p>
+                <h2 style="color: #190577;">About ICAIR</h2>
+                <p>ICAIR is a premier conference that brings together experts, researchers, and enthusiasts in the fields of Artificial Intelligence and Robotics. This year's theme is "Artificial Intelligence for the Future Industrialization of Medicine in Sub-Saharan Africa", and we have an exciting lineup of speakers and workshops planned.</p>
+                <h2 style="color: #190577;">What to Expect</h2>
                 <ul>
                     <li>Keynote speeches from industry leaders</li>
                     <li>Interactive workshops and demonstrations</li>
                     <li>Networking opportunities with peers and experts</li>
                     <li>Showcase of cutting-edge AI and robotics technologies</li>
                 </ul>
-                <p>If you have any questions or need additional information, please don't hesitate to contact us at nitda@nithub.com.</p>
+                <p>If you have any questions or need additional information, please don't hesitate to contact us at mirg-icair@unilag.edu.ng.</p>
                 <p>We look forward to seeing you at ICAIR!</p>
                 <p>Best regards,<br>The ICAIR Team</p>
             </td>
