@@ -232,7 +232,8 @@ app.post("/participant/check-in", async (req, res) => {
     const currentDate = new Date();
 
     const dayMapping = {
-      [new Date(currentDate.getFullYear(), 11, 1).toDateString()]: "day1",
+      [new Date(currentDate.getFullYear(), 10, 22).toDateString()]: "day1",
+      [new Date(currentDate.getFullYear(), 11, 1).toDateString()]: "day3",
       [new Date(currentDate.getFullYear(), 11, 2).toDateString()]: "day2",
     };
 
@@ -242,9 +243,23 @@ app.post("/participant/check-in", async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid day" });
     }
 
-    if (day === "day1") participant.dayOneAttendance = true;
+    if (day === "day1") {
+      if (participant.dayOneAttendance === true)
+        return res
+          .status(400)
+          .json({ success: false, message: "Participant Already Checked In" });
 
-    if (day === "day2") participant.dayTwoAttendance = true;
+      participant.dayOneAttendance = true;
+    }
+
+    if (day === "day2") {
+      if (participant.dayTwoAttendance === true)
+        return res
+          .status(400)
+          .json({ success: false, message: "Participant Already Checked In" });
+
+      participant.dayTwoAttendance = true;
+    }
 
     await participant.save();
 
