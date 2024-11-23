@@ -25,10 +25,11 @@ const participantSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email format").nonempty("Email is required"),
-  country: z.string().min(1, "Country is required"),
+  country: z.string().optional(),
   affiliatedOrganization: z.string().optional(),
   attendedAs: z.enum([
     "Author",
+    "Non-Author",
     "Student",
     "Speaker",
     "Exhibitor",

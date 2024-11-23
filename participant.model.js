@@ -6,13 +6,14 @@ const ParticipantSchema = new Schema(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    country: { type: String, required: true },
+    country: { type: String },
     affiliatedOrganization: { type: String, required: false },
     attendedAs: {
       type: String,
       required: true,
       enum: [
         "Author",
+        "Non-Author",
         "Student",
         "Speaker",
         "Exhibitor",
