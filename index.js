@@ -79,7 +79,7 @@ app.post("/participant", async (req, res) => {
     });
 
     const qrCodeDataUrl = await QRCode.toDataURL(ticketId);
-    participant?.ticketId?.to
+    participant?.ticketId?.to;
 
     await sendEmail({
       to: validatedData.email,
@@ -87,9 +87,9 @@ app.post("/participant", async (req, res) => {
       body: sendTicketEmail({
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
-        ticketId:participant.ticketId,
-        attendedAs:participant.attendedAs,
-        registeredAs:participant.registeredAs,
+        ticketId: participant.ticketId,
+        attendedAs: participant.attendedAs,
+        registeredAs: participant.registeredAs,
         email: participant.email,
         qrCodeDataUrl,
       }),
@@ -109,6 +109,9 @@ app.post("/participant", async (req, res) => {
 });
 
 app.post("/participant/bulk", async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const participants = Array.isArray(req.body) ? req.body : [];
 
@@ -127,7 +130,8 @@ app.post("/participant/bulk", async (req, res) => {
     });
 
     const createdParticipants = await Participant.insertMany(
-      participantsWithTickets
+      participantsWithTickets,
+      { session }
     );
 
     // Send registration emails in parallel
@@ -147,6 +151,7 @@ app.post("/participant/bulk", async (req, res) => {
       })
     );
 
+    await session.commitTransaction();
     res.status(201).json({
       success: true,
       data: {
@@ -155,13 +160,26 @@ app.post("/participant/bulk", async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to create participants",
-    });
+    await session.abortTransaction();
+
+    // Check for duplicate key error
+    if (error.code === 11000) {
+      res.status(409).json({
+        success: false,
+        message: error.message,
+        error: error.message,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create participants",
+      });
+    }
+  } finally {
+    session.endSession();
   }
 });
 
@@ -171,18 +189,17 @@ app.get("/participant", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search;
 
-     const query = search
-       ? {
-           $or: Object.keys(Participant.schema.paths)
-             .filter(
-               (field) => Participant.schema.paths[field].instance === "String"
-             ) // Only include string fields
-             .map((field) => ({
-               [field]: { $regex: search, $options: "i" },
-             })),
-         }
-       : {};
-
+    const query = search
+      ? {
+          $or: Object.keys(Participant.schema.paths)
+            .filter(
+              (field) => Participant.schema.paths[field].instance === "String"
+            ) // Only include string fields
+            .map((field) => ({
+              [field]: { $regex: search, $options: "i" },
+            })),
+        }
+      : {};
 
     const [participants, total] = await Promise.all([
       Participant.find(query)
@@ -204,7 +221,7 @@ app.get("/participant", async (req, res) => {
       },
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
