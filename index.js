@@ -103,7 +103,7 @@ app.post("/participant", async (req, res) => {
     console.log("error", error);
     if (error instanceof z.ZodError) {
       res.status(400).json({ success: false, errors: error.errors });
-    } else if (error.name === "MongoError" && error.code === 11000) {
+    } else if (error.name === "MongoError" || error.code === 11000) {
       res.status(409).json({ success: false, message: "Duplicate entry." });
     } else {
       res.status(500).json({ success: false, message: "Server error" });
@@ -189,6 +189,7 @@ const formatData = (csvRow) => {
     firstName: csvRow["First Name"] || "",
     lastName: csvRow["Last Name"] || "",
     email: csvRow["Email"] || "",
+    phone: csvRow["Phone"] || "",
     country: csvRow["Country"] || "",
     affiliatedOrganization: csvRow["Affiliated Organization"] || undefined,
     registeredAs: csvRow["Registered as"]?.toLowerCase().includes("free")
@@ -224,7 +225,7 @@ app.post("/participant/bulk/csv", upload.single("file"), async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const participants = [];
+  const participantsMap = new Map();
   const invalidParticipants = [];
 
   try {
@@ -246,60 +247,59 @@ app.post("/participant/bulk/csv", upload.single("file"), async (req, res) => {
         continue;
       }
 
-      const existingParticipant = await Participant.findOne({
-        email: formattedRow.email,
-      });
+      // Handle duplicate in the same upload
+      if (participantsMap.has(formattedRow.email)) {
+        const existingParticipant = participantsMap.get(formattedRow.email);
 
-      if (existingParticipant) {
-        await Participant.findByIdAndUpdate(
-          existingParticipant._id,
-          formattedRow,
-          { session }
-        );
-      } else {
-        participants.push({
+        participantsMap.set(formattedRow.email, {
+          ...existingParticipant,
           ...formattedRow,
-          ticketId: generateTicketId(),
         });
+      } else {
+        const existingParticipant = await Participant.findOne({
+          email: formattedRow.email,
+        });
+
+        if (existingParticipant) {
+          await Participant.findByIdAndUpdate(
+            existingParticipant._id,
+            formattedRow,
+            { session }
+          );
+        } else {
+          const participantWithTicket = {
+            ...formattedRow,
+            ticketId: generateTicketId(),
+          };
+
+          participantsMap.set(formattedRow.email, participantWithTicket);
+        }
       }
     }
 
+    const participants = Array.from(participantsMap.values());
+
     await Promise.all(
       participants.map(async (participant) => {
-        try {
-          await Participant.create([participant], {
-            session,
-          });
+        await Participant.create([participant], {
+          session,
+        });
 
-          const qrCodeDataUrl = await QRCode.toDataURL(participant?.ticketId);
-          console.log( `Created User ${participant.email} and about to send them a mail`)
+        const qrCodeDataUrl = await QRCode.toDataURL(participant?.ticketId);
 
-          sendEmail({
-            to: participant.email,
-            subject: "Ticket Confirmation",
-            body: sendTicketEmail({
-              firstName: participant.firstName,
-              lastName: participant.lastName,
-              ticketId: participant.ticketId,
-              attendedAs: participant.attendedAs,
-              registeredAs: participant.registeredAs,
-              email: participant.email,
-              qrCodeDataUrl,
-            }),
-          });
-        } catch (error) {
-          if (error.name === "MongoError" && error.code === 11000) {
-            await Participant.findOneAndUpdate(
-              {
-                email: participant.email,
-              },
-              participant,
-              { session, new: true }
-            );
-          } else {
-            throw error;
-          }
-        }
+        sendEmail({
+          to: participant.email,
+          subject: "Ticket Confirmation",
+          body: sendTicketEmail({
+            firstName: participant.firstName,
+            lastName: participant.lastName,
+            ticketId: participant.ticketId,
+            attendedAs: participant.attendedAs,
+            registeredAs: participant.registeredAs,
+            email: participant.email,
+            qrCodeDataUrl,
+          }),
+        });
       })
     );
 
@@ -410,7 +410,7 @@ app.put("/participant/:id", async (req, res) => {
   }
 });
 
-app.put("/participant/:id/resend-email", async (req, res) => {
+app.get("/participant/:id/resend-email", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -431,6 +431,10 @@ app.put("/participant/:id/resend-email", async (req, res) => {
       body: sendTicketEmail({
         firstName: participant.firstName,
         lastName: participant.lastName,
+        ticketId: participant.ticketId,
+        attendedAs: participant.attendedAs,
+        registeredAs: participant.registeredAs,
+        email: participant.email,
         qrCodeDataUrl,
       }),
     });

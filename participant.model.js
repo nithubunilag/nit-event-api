@@ -7,6 +7,7 @@ const ParticipantSchema = new Schema(
     lastName: { type: String, required: false },
     email: { type: String, required: true, unique: true },
     country: { type: String },
+    phone: { type: String },
     affiliatedOrganization: { type: String, required: false },
     attendedAs: {
       type: String,
