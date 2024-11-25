@@ -188,6 +188,7 @@ const formatData = (csvRow) => {
     title: csvRow["Title"] || "",
     firstName: csvRow["First Name"] || "",
     lastName: csvRow["Last Name"] || "",
+    email: csvRow["Email"] || "",
     country: csvRow["Country"] || "",
     affiliatedOrganization: csvRow["Affiliated Organization"] || undefined,
     registeredAs: csvRow["Registered as"]?.toLowerCase().includes("free")
@@ -292,8 +293,8 @@ app.post("/participant/bulk/csv", upload.single("file"), async (req, res) => {
     return res.status(201).json({
       success: true,
       data: {
-        count: participants.length,
         participants,
+        invalidParticipants,
       },
     });
   } catch (error) {
