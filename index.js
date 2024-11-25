@@ -119,14 +119,9 @@ app.post("/participant/bulk", async (req, res) => {
     const participants = Array.isArray(req.body) ? req.body : [];
 
     const participantsWithTickets = participants.map((participant) => {
-      const ticketId = `TICKET${Math.random()
-        .toString(36)
-        .substr(2, 8)
-        .toUpperCase()}`;
-
       return {
         ...participant,
-        ticketId,
+        ticketId: generateTicketId(),
         dayOneAttendance: false,
         dayTwoAttendance: false,
       };
