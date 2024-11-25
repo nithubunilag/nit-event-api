@@ -27,7 +27,7 @@ const ParticipantSchema = new Schema(
       default: "physical",
       enum: ["virtual", "physical"],
     },
-    title: { type: String, required: true },
+    title: { type: String, required: false },
     titleOfPaper: { type: String },
     paidParticipationFee: { type: Boolean, default: false },
     participatedAs: {
@@ -41,8 +41,10 @@ const ParticipantSchema = new Schema(
       enum: ["free", "paid"],
     },
     ticketId: { type: String, required: true, unique: true },
+    dayZeroAttendance: { type: Boolean, default: false },
     dayOneAttendance: { type: Boolean, default: false },
     dayTwoAttendance: { type: Boolean, default: false },
+    dayThreeAttendance: { type: Boolean, default: false },
   },
   {
     timestamps: true,

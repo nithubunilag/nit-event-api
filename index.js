@@ -7,6 +7,9 @@ const Participant = require("./participant.model");
 const mongoose = require("mongoose");
 const QRCode = require("qrcode");
 const axios = require("axios");
+const multer = require("multer");
+const csv = require("csv-parser");
+const fs = require("fs");
 
 require("dotenv").config();
 
@@ -183,6 +186,150 @@ app.post("/participant/bulk", async (req, res) => {
   }
 });
 
+const upload = multer({ dest: "uploads/" });
+
+const formatData = (csvRow) => {
+  return {
+    title: csvRow["Title"] || "",
+    firstName: csvRow["First Name"] || "",
+    lastName: csvRow["Last Name"] || "",
+    country: csvRow["Country"] || "",
+    affiliatedOrganization: csvRow["Affiliated Organization"] || undefined,
+    registeredAs: csvRow["Registered as"]?.toLowerCase().includes("free")
+      ? "free"
+      : csvRow["Registered as"]?.toLowerCase().includes("paid")
+      ? "paid"
+      : undefined,
+    attendedAs: csvRow["Attended as"] || "",
+    participatedAs: csvRow["Participated as"]?.toLowerCase().includes("local")
+      ? "local"
+      : csvRow["Participated as"]?.toLowerCase().includes("international")
+      ? "international"
+      : undefined,
+    attendanceType:
+      csvRow["Attended"]?.toLowerCase() === "physical"
+        ? "physical"
+        : csvRow["Attended"]?.toLowerCase() === "virtual"
+        ? "virtual"
+        : undefined,
+    titleOfPaper: csvRow["Title of Paper"] || undefined,
+    paidParticipationFee: !!csvRow["Paid participation fee"],
+  };
+};
+
+app.post("/participant/bulk/csv", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "No File Found",
+    });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  const participants = [];
+  const invalidParticipants = [];
+
+  try {
+    const csvData = [];
+
+    await new Promise((resolve, reject) => {
+      fs.createReadStream(req.file.path)
+        .pipe(csv())
+        .on("data", (row) => csvData.push(row))
+        .on("end", resolve)
+        .on("error", reject);
+    });
+
+    for (const row of csvData) {
+      const formattedRow = formatData(row);
+
+      if (
+        !formattedRow.email ||
+        !formattedRow.firstName ||
+        !formattedRow.lastName
+      ) {
+        invalidParticipants.push(formattedRow);
+        continue;
+      }
+
+      const existingParticipant = await Participant.findOne({
+        email: formattedRow.email,
+      });
+
+      if (existingParticipant) {
+        await Participant.findByIdAndUpdate(
+          existingParticipant._id,
+          formattedRow,
+          { session }
+        );
+      } else {
+        participants.push({
+          ...formattedRow,
+          ticketId: generateTicketId(),
+        });
+      }
+    }
+
+    if (participants.length > 0) {
+      await Participant.insertMany(participants, { session });
+
+      await Promise.all(
+        participants.map(async (participant) => {
+          const qrCodeDataUrl = await QRCode.toDataURL(participant?.ticketId);
+
+          await sendEmail({
+            to: participant.email,
+            subject: "Ticket Confirmation",
+            body: sendTicketEmail({
+              firstName: participant.firstName,
+              lastName: participant.lastName,
+              qrCodeDataUrl,
+            }),
+          });
+        })
+      );
+    }
+
+    await session.commitTransaction();
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        count: participants.length,
+        participants,
+      },
+    });
+  } catch (error) {
+    console.error("Error processing participants:", error);
+
+    await session.abortTransaction();
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to process participants.",
+    });
+  } finally {
+    session.endSession();
+  }
+});
+
+app.delete("/participant", async (req, res) => {
+  try {
+    const result = await Participant.deleteMany({
+      firstName: "John",
+    });
+    res.status(200).json({
+      success: true,
+      message: `${result.deletedCount} participants deleted.`,
+    });
+  } catch (error) {
+    console.error("Error deleting participants:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 app.get("/participant", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -252,6 +399,41 @@ app.put("/participant/:id", async (req, res) => {
   }
 });
 
+app.put("/participant/:id/resend-email", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const participant = await Participant.findById(id);
+
+    if (!participant) {
+      res
+        .status(404)
+        .json({ success: false, message: "Participant not found" });
+      return;
+    }
+
+    const qrCodeDataUrl = await QRCode.toDataURL(participant?.ticketId);
+
+    await sendEmail({
+      to: participant.email,
+      subject: "Ticket Confirmation",
+      body: sendTicketEmail({
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        qrCodeDataUrl,
+      }),
+    });
+
+    res.json({ success: true, data: participant });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ success: false, errors: error.errors });
+    } else {
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  }
+});
+
 app.post("/participant/check-in", async (req, res) => {
   try {
     const { ticketId } = req.body;
@@ -267,15 +449,25 @@ app.post("/participant/check-in", async (req, res) => {
     const currentDate = new Date();
 
     const dayMapping = {
-      [new Date(currentDate.getFullYear(), 10, 22).toDateString()]: "testDay",
+      [new Date(currentDate.getFullYear(), 10, 25).toDateString()]: "day0",
       [new Date(currentDate.getFullYear(), 10, 26).toDateString()]: "day1",
       [new Date(currentDate.getFullYear(), 10, 28).toDateString()]: "day2",
+      [new Date(currentDate.getFullYear(), 10, 29).toDateString()]: "day2",
     };
 
     const day = dayMapping[currentDate.toDateString()];
 
     if (!day) {
       return res.status(400).json({ success: false, message: "Invalid day" });
+    }
+
+    if (day === "day0") {
+      if (participant.dayZeroAttendance === true)
+        return res
+          .status(400)
+          .json({ success: false, message: "Participant Already Checked In" });
+
+      participant.dayZeroAttendance = true;
     }
 
     if (day === "day1") {
@@ -294,6 +486,15 @@ app.post("/participant/check-in", async (req, res) => {
           .json({ success: false, message: "Participant Already Checked In" });
 
       participant.dayTwoAttendance = true;
+    }
+
+    if (day === "day3") {
+      if (participant.dayThreeAttendance === true)
+        return res
+          .status(400)
+          .json({ success: false, message: "Participant Already Checked In" });
+
+      participant.dayThreeAttendance = true;
     }
 
     await participant.save();
