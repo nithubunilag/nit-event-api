@@ -4,7 +4,7 @@ const { Schema } = require("mongoose");
 const ParticipantSchema = new Schema(
   {
     firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    lastName: { type: String, required: false },
     email: { type: String, required: true, unique: true },
     country: { type: String },
     affiliatedOrganization: { type: String, required: false },

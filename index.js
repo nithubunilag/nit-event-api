@@ -241,11 +241,7 @@ app.post("/participant/bulk/csv", upload.single("file"), async (req, res) => {
     for (const row of csvData) {
       const formattedRow = formatData(row);
 
-      if (
-        !formattedRow.email ||
-        !formattedRow.firstName ||
-        !formattedRow.lastName
-      ) {
+      if (!formattedRow.email || !formattedRow.firstName) {
         invalidParticipants.push(formattedRow);
         continue;
       }
@@ -268,25 +264,44 @@ app.post("/participant/bulk/csv", upload.single("file"), async (req, res) => {
       }
     }
 
-    if (participants.length > 0) {
-      await Participant.insertMany(participants, { session });
+    await Promise.all(
+      participants.map(async (participant) => {
+        try {
+          await Participant.create([participant], {
+            session,
+          });
 
-      await Promise.all(
-        participants.map(async (participant) => {
           const qrCodeDataUrl = await QRCode.toDataURL(participant?.ticketId);
+          console.log( `Created User ${participant.email} and about to send them a mail`)
 
-          await sendEmail({
+          sendEmail({
             to: participant.email,
             subject: "Ticket Confirmation",
             body: sendTicketEmail({
               firstName: participant.firstName,
               lastName: participant.lastName,
+              ticketId: participant.ticketId,
+              attendedAs: participant.attendedAs,
+              registeredAs: participant.registeredAs,
+              email: participant.email,
               qrCodeDataUrl,
             }),
           });
-        })
-      );
-    }
+        } catch (error) {
+          if (error.name === "MongoError" && error.code === 11000) {
+            await Participant.findOneAndUpdate(
+              {
+                email: participant.email,
+              },
+              participant,
+              { session, new: true }
+            );
+          } else {
+            throw error;
+          }
+        }
+      })
+    );
 
     await session.commitTransaction();
 
